@@ -4,9 +4,11 @@ Ever accidentally run a command as `root`?
 
 `safety-razer` helps keep you aware of when you're logged in as `root` by setting every connected Razer device's lighting effect to a deep red. When you exit from `root`, it will set the lighting effect to a calm blue. 
 
-#### Installation
+### Installation
 
-First, you need to install `OpenRazer` by following the instructions at the bottom of [this page](https://openrazer.github.io).
+**Note: Requires an OpenRazer supported Linux distribution.**
+
+First, install `OpenRazer` by following the instructions at the bottom of [this page](https://openrazer.github.io).
 
 Then, clone this repository and run the script in the background.
 
