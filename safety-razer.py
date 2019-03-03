@@ -63,7 +63,8 @@ def main():
     """
     compatibility_check()
     device_manager = DeviceManager()
-    list_razer_devices(device_manager)
+    if DEBUG:
+        list_razer_devices(device_manager)
 
     for device in device_manager.devices:
         if not device.fx.has(STATIC_EFFECT):
