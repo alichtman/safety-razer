@@ -1,5 +1,6 @@
 from openrazer.client import DeviceManager
 from colorama import Fore, Style
+from datetime import datetime
 from collections import deque
 from loguru import logger
 from pathlib import Path
@@ -18,15 +19,26 @@ colors = {
 	"blue" : (0, 153, 255)
 }
 
-action = {
+sudo_logs = {
+	"ubuntu" : "/var/log/auth.log"
+}
+
+# Used for changing the light settings
+light_change_action = {
 	"none": None,
 	"elevate": 1,
 	"de-esecalate": 2
 }
 
+privilege_status = {
+	"user": 0,
+	"elevated": 1
+}
+
 DEBUG = True
 STATIC_EFFECT = "static"
 LOG_PATH = "{}/.safety-razer.log".format(str(Path.home()))
+CHECK_INTERVAL = 3  # in seconds
 
 
 logger.add(LOG_PATH,
@@ -93,47 +105,54 @@ def create_logfile():
 		logger.debug("Created log file: {}.".format(LOG_PATH))
 
 
-def get_history_file_path():
-	return os.environ(["HISTFILE"])
+def extract_date_from_log_line(line):
+	date_parts = line.split()[:3]
+	if len(date_parts[1]) == 1:
+		date_parts[1] = "0" + date_parts[1]
+	date = " ".join(date_parts)
+
+	# Format: month-abbr day-number HH:MM:SS
+	return datetime.strptime(date, '%b %d %:H%M%S')
 
 
-def get_file_len(history):
+def get_last_time(history):
 	with open(history, "r") as f:
-		return len(f.readlines())
+		return extract_date_from_log_line(f.readlines()[-1])
 
 
-def get_unprocessed_commands(history, last_index):
+def get_new_privelege_changes(history, last_time):
+	start_idx = 0
 	with open(history, "r") as f:
 		all_lines = f.readlines()
-		return [line.strip() for line in all_lines][:last_index], len(all_lines)
+		for line in all_lines:
+			if extract_date_from_log_line(line) <= last_time:
+				start_idx += 1
+			else:
+				break
+
+		return [line.strip() for line in all_lines][start_idx:], extract_date_from_log_line(all_lines[-1])
 
 
-def process_commands(commands, status_stack):
-	escalate = ["sudo", "su"]
-	de_secalate = ["exit"]
-	privelege_change_commands = [command for command in commands
-								if command.startswith(any(escalate + de_secalate))]
-
-	logger.debug("Found {} privelege change commands".format(len(privelege_change_commands)))
-	logger.debug(privelege_change_commands)
-
+def process_changes(changes, status_stack):
 	orig_len = len(status_stack)
+	escalate = "Successful su"
+	de_escalate = "Removed session"
 
-	if len(privelege_change_commands) == 0:
-		return action["none"], status_stack
-	else:
-		for x in privelege_change_commands:
-			for item in escalate:
-				if x.startswith(item):
-					status_stack.append("root")
-			for item in de_secalate:
-				if x.startswith(item):
-					status_stack.pop()
+	for change in changes:
+		if escalate in change:
+			logger.debug("Found privilege escalation.")
+			status_stack.append(privilege_status["elevated"])
+		elif de_escalate in change:
+			logger.debug("Found privilege de-escalation.")
+			status_stack.pop()
 
-	if orig_len > len(status_stack):
-		return action["elevate"], status_stack
+	new_len = len(status_stack)
+	if orig_len > new_len:
+		return light_change_action["elevate"], status_stack
+	elif orig_len < new_len:
+		return light_change_action["de-esecalate"], status_stack
 	else:
-		return action["de-esecalate"], status_stack
+		return light_change_action["none"], status_stack
 
 
 def main():
@@ -147,32 +166,34 @@ def main():
 	if DEBUG:
 		list_razer_devices(device_manager)
 
-	hist_file = get_history_file_path()
+	# TODO: This demo is just for Ubuntu, but this should be expanded to more Linux distros
+	sudo_access_file = sudo_logs["ubuntu"]
 
-	# Track privilege level using a stack
+	# Track privilege level using a stack.
+	# Assume no elevated priveleges at start.
 	tracked_privilege = deque()
-	tracked_privilege.append("user")
+	tracked_privilege.append(privilege_status["user"])
 
-	last_hist_index = get_file_len(hist_file)
+	last_time = get_last_time(sudo_access_file)
 
 	# Check every 5 seconds
 	while True:
-		commands, last_hist_index = get_unprocessed_commands(hist_file, last_hist_index)
-		action, tracked_privilege = process_commands(commands, tracked_privilege)
+		logger.debug("Current privilege stack: {}".format(privilege_status))
+		privelege_changes, last_time = get_new_privelege_changes(sudo_access_file, last_time)
+		light_change_action, tracked_privilege = process_changes(privelege_changes, tracked_privilege)
 
-		if action == action["escalate"]:
+		if light_change_action == light_change_action["escalate"]:
 			for device in validate_devices(device_manager.devices):
 				if device.fx.static(*colors["red"]):
 					logger.debug("Successfully set {} to static red".format(device.name))
-
-		elif action == action["de-esecalate"]:
-			if device.fx.static(*colors["blue"]):
-				logger.debug("Successfully set {} to static blue".format(device.name))
-
+		elif light_change_action == light_change_action["de-esecalate"]:
+			for device in validate_devices(device_manager.devices):
+				if device.fx.static(*colors["blue"]):
+					logger.debug("Successfully set {} to static blue".format(device.name))
 		else:
 			logger.debug("No privelege change detected.")
 
-		time.sleep(5)
+		time.sleep(CHECK_INTERVAL)
 
 
 if __name__ == '__main__':
