@@ -130,7 +130,7 @@ def get_new_privelege_changes(history, last_time):
 			else:
 				break
 
-		return [line.strip() for line in all_lines][start_idx:], extract_date_from_log_line(all_lines[-1])
+		return [line.strip() for line in all_lines[start_idx:]], extract_date_from_log_line(all_lines[-1])
 
 
 def process_changes(changes, status_stack):
@@ -160,11 +160,18 @@ def main():
 	Check if a user is root. If they are, set the keyboard to bright red.
 	Otherwise, set the keyboard to bright blue.
 	"""
+	create_logfile()
 	logger.debug("Opening safety-razer.")
 	compatibility_check()
-	device_manager = DeviceManager()
+	
+	try:
+	        device_manager = DeviceManager()
+	except Exception as e:
+	        logger.exception("Razer DeviceManager error. {}".format(e))
+	        sys.exit()
+
 	if DEBUG:
-		list_razer_devices(device_manager)
+	        list_razer_devices(device_manager)
 
 	# TODO: This demo is just for Ubuntu, but this should be expanded to more Linux distros
 	sudo_access_file = sudo_logs["ubuntu"]

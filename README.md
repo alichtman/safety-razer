@@ -11,13 +11,7 @@ Ever accidentally run a command as `root`?
 + An `OpenRazer` supported Linux distribution is needed.
 + `zsh` must be installed.
 
-1. First, install `OpenRazer` by following the instructions at the bottom of [this page](https://openrazer.github.io). For Ubuntu/Linux Mint, the setup is:
-
-```zsh
-$ sudo add-apt-repository ppa:openrazer/stable
-$ sudo apt update
-$ sudo apt install openrazer-meta
-```
+1. First, install `OpenRazer` by following the instructions at the bottom of [this page](https://openrazer.github.io). For this demo, I've decided to use `OpenSUSE`.
 
 2. Clone this repository, install the dependencies, and add the script to your `~/.zshrc` to be run on login.
 
@@ -27,8 +21,4 @@ $ cd safety-razer
 $ pip3 install -r requirements.txt
 $ echo "sudo python3 safety-razer.py &" >> ~/.zshrc
 ```
-
-#### Configuration
-
-
 
