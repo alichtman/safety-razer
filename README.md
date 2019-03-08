@@ -16,6 +16,10 @@ $ pip3 install -r requirements.txt
 $ echo "sudo python3 safety-razer.py &" >> ~/.zshrc
 ```
 
+### Future Development
+
+If there are drivers for other RGB-enabled keyboards available, I'd like to add them. I happen to have only a `Razer` keyboard, and that's the reason this project is currently limited to Razer keyboards.
+
 ### Notes
 
 This project is under development. If you run into any issues using it, please open an issue [here](https://github.com/alichtman/safety-razer/issues/new).
