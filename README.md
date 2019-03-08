@@ -18,4 +18,4 @@ $ echo "sudo python3 safety-razer.py &" >> ~/.zshrc
 
 ### Note
 
-This project is under development. If you run into any issues using it, please open an issue [here](www.github.com/alichtman/safety-razer/issues/new).
+This project is under development. If you run into any issues using it, please open an issue [here](https://github.com/alichtman/safety-razer/issues/new).
