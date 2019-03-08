@@ -16,6 +16,8 @@ $ pip3 install -r requirements.txt
 $ echo "sudo python3 safety-razer.py &" >> ~/.zshrc
 ```
 
-### Note
+### Notes
 
 This project is under development. If you run into any issues using it, please open an issue [here](https://github.com/alichtman/safety-razer/issues/new).
+
+It is licensed under GPL v3 and is not officially endorsed by [`Razer`](https://www.razer.com).
